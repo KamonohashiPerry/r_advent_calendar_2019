@@ -65,4 +65,4 @@ for (j in 1:n) {
 }
 
 # 保存
-save(ut_df, "ut_df.RData")
+save(ut_df, file = "ut_df.RData")
