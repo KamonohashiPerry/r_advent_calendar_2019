@@ -59,7 +59,7 @@ for (i in 2:nrow(accident_df)) {
   },
   finnaly = {
     #ここに記載したコードは必ず実行される
-    print(url_str)
+    print(i)
   }, silent = TRUE)
   
   sleep(sleep_time)
