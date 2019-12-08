@@ -35,17 +35,34 @@ root <- "http://geo.search.olp.yahooapis.jp/OpenLocalPlatform/V1/geoCoder?"
 root <- paste0(root,"appid=",conf$api_key ,"&output=json")
 
 
-for (i in 1:nrow(accident_df)) {
+for (i in 2:nrow(accident_df)) {
   address_str <- accident_df$address[i]
   url   <- paste0(root, "&query=", address_str, sep="")
   url.u <- URLencode(iconv(url, "", "UTF-8")) # UTF-8に変換
   doc <- getURL(url.u)
   x <- fromJSON(doc, simplify = FALSE)
-  accident_df$latitute[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[2]
-  accident_df$longitude[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[1]
-  accident_df$location_type[i] <- x$Feature[[1]]$Property$AddressType
-  accident_df$formatted_address[i] <- x$Feature[[1]]$Property$Address
+  
+  tryCatch({
+    # エラーや警告が発生したときに例外処理を行いたいコード
+    accident_df$latitute[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[2]
+    accident_df$longitude[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[1]
+    accident_df$location_type[i] <- x$Feature[[1]]$Property$AddressType
+    accident_df$formatted_address[i] <- x$Feature[[1]]$Property$Address
+    
+  }, 
+  error = function(e) {
+    #エラーが発生した時の処理
+    print("error")
+  },
+  warning = function(e) {
+    #警告が発生した時の処理
+  },
+  finnaly = {
+    #ここに記載したコードは必ず実行される
+    print(url_str)
+  }, silent = TRUE)
   
   sleep(sleep_time)
 }
 
+save(accident_df, file = "accident_df_with_coordinate.RData")
