@@ -32,7 +32,7 @@ accident_df <- data.frame(url=NA,
                           detail=NA,
                           upload_date=NA)
 
-for (i in 1:nrow(ut_df)) { # nrow(ut_df)
+for (i in 1:nrow(ut_df)) {
   url_str <- paste0("http://www.", ut_df$url[i])
   
   #ブラウザで目的のページに移動
