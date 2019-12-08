@@ -32,29 +32,42 @@ accident_df <- data.frame(url=NA,
                           detail=NA,
                           upload_date=NA)
 
-for (i in 1:nrow(ut_df)) {
+for (i in 1:nrow(ut_df)) { # nrow(ut_df)
   url_str <- paste0("http://www.", ut_df$url[i])
-  print(url_str)
   
   #ブラウザで目的のページに移動
   rem$navigate(url_str)
   sleep(sleep_time)
   
-  # 要素の取得
-  element_1 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[1]')
-  element_2 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[2]')
-  element_3 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[3]')
-  element_4 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[4]')
   
-  df <- data.frame(url=url_str,
-                   date=as.character(element_1$getElementText()),
-                   address=as.character(element_2$getElementText()),
-                   detail=as.character(element_3$getElementText()),
-                   upload_date=as.character(element_4$getElementText())
-                   )
-  
-  accident_df <- rbind(accident_df, df)
-  
+  tryCatch({
+    # エラーや警告が発生したときに例外処理を行いたいコード
+    # 要素の取得
+    element_1 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[1]')
+    element_2 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[2]')
+    element_3 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[3]')
+    element_4 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[4]')
+    
+    df <- data.frame(url=url_str,
+                     date=as.character(element_1$getElementText()),
+                     address=as.character(element_2$getElementText()),
+                     detail=as.character(element_3$getElementText()),
+                     upload_date=as.character(element_4$getElementText())
+    )
+    
+    accident_df <- rbind(accident_df, df)
+    }, 
+    error = function(e) {
+      #エラーが発生した時の処理
+      print("error")
+      },
+    warning = function(e) {
+      #警告が発生した時の処理
+    },
+    finnaly = {
+    #ここに記載したコードは必ず実行される
+      print(url_str)
+    }, silent = TRUE)
 }
 
 save(accident_df, file = "accident_df.RData")
