@@ -24,7 +24,7 @@ accident_df <- accident_df %>% distinct(url,.keep_all=TRUE)
 accident_df <- accident_df %>% distinct(address,.keep_all=TRUE)
 
 # 経度と緯度のカラム追加
-accident_df <- accident_df %>% mutate(latitute="",
+accident_df <- accident_df %>% mutate(latitude="",
                                       longitude="",
                                       location_type="",
                                       formatted_address="")
@@ -44,7 +44,7 @@ for (i in 2:nrow(accident_df)) {
   
   tryCatch({
     # エラーや警告が発生したときに例外処理を行いたいコード
-    accident_df$latitute[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[2]
+    accident_df$latitude[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[2]
     accident_df$longitude[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[1]
     accident_df$location_type[i] <- x$Feature[[1]]$Property$AddressType
     accident_df$formatted_address[i] <- x$Feature[[1]]$Property$Address
