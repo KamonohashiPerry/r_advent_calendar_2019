@@ -106,6 +106,22 @@ for (i in 1:nrow(published_land_price_df)) {
 }
 
 
+published_land_price_df <- published_land_price_df %>% filter(latitude!="")
+
+published_land_price_df <- published_land_price_df %>% mutate(mesh="")
+
+# 緯度経度を10kmメッシュにする
+for (i in 1:nrow(published_land_price_df)) {
+  published_land_price_df$mesh[i] <- jpmesh::coords_to_mesh(
+    as.numeric(published_land_price_df$longitude[i]),
+    as.numeric(published_land_price_df$latitude[i]),
+    mesh_size = "10km")
+}
+published_land_price_df <- published_land_price_df %>% mutate(mesh=as.integer(mesh))
+
+published_land_price_df_summary <- published_land_price_df %>% group_by(mesh) %>% summarise(mean_price=mean(price))
+
+
 # 推計人口
 estimated_population <- getKSJData("http://nlftp.mlit.go.jp/ksj/gml/data/m1000/m1000-17/m1000-17_GML.zip",
                                    cache_dir = "cached_zip")
@@ -127,7 +143,7 @@ for (i in 1:nrow(estimated_population_df)) {
 
 estimated_population_df <- estimated_population_df %>% mutate(five_k_mesh="")
 
-# 緯度経度を5kmメッシュにする
+# 緯度経度を10kmメッシュにする
 for (i in 1:nrow(estimated_population_df)) {
   estimated_population_df$five_k_mesh[i] <- jpmesh::coords_to_mesh(
     as.numeric(estimated_population_df$lng_center[i]),
@@ -149,5 +165,10 @@ estimated_population_df_distinct <- estimated_population_df_distinct %>%
 estimated_population_df_distinct$accident_count <- replace_na(estimated_population_df_distinct$accident_count, 0)
 
 estimated_population_df_distinct <- estimated_population_df_distinct %>% mutate(accident_percapita=accident_count/population)
+
+
+estimated_population_df_distinct <- estimated_population_df_distinct %>% 
+                                        left_join(published_land_price_df_summary,
+                                                  by=c("five_k_mesh"="mesh"))
 
 
