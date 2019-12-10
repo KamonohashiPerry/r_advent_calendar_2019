@@ -31,7 +31,6 @@ accident_df %>% group_by(k_mesh) %>% count() %>% arrange(desc(n))
 KSJlist <- getKSJSummary()
 # View(getKSJURL("m1000"))
 
-{
 # 公示地価
 published_land_price <- getKSJData("http://nlftp.mlit.go.jp/ksj/gml/data/L01/L01-15/L01-15_GML.zip",
                                     cache_dir = "cached_zip")
@@ -39,76 +38,14 @@ published_land_price <- getKSJData("http://nlftp.mlit.go.jp/ksj/gml/data/L01/L01
 published_land_price_df <- data.frame(price=as.integer(published_land_price$`L01-15`$L01_006),
                                       address=as.character(published_land_price$`L01-15`$L01_019),
                                       area_code=as.integer(published_land_price$`L01-15`$L01_017))
-published_land_price_df <- published_land_price_df %>% filter( 15000 > area_code ,area_code > 11000)
-
-published_land_price_df$address <- gsub(published_land_price_df$address, pattern = "　",replacement =  "")
-published_land_price_df$address <- gsub(published_land_price_df$address, pattern = "番",replacement =  "-")
-published_land_price_df$address <- gsub(published_land_price_df$address, pattern = "外$",replacement =  "")
-
-published_land_price_df <- published_land_price_df %>%  mutate(latitude="",
-                                                               longitude="",
-                                                               location_type="",
-                                                               formatted_address="")
-
-
-# 住所から緯度経度を求める
-library(config)
-library(RCurl)
-library(RJSONIO)
-
-# ローカルのconfigファイルからオブジェクトの取得
-conf <- config::get(config = "yahoo_map_api")
-
-# 待機時間
-sleep_time <- 1
-
-# sleep関数の指定
-sleep <- function(sec){
-  start <- proc.time()
-  end <- proc.time()
-  while((end-start)[3] < sec){ end <- proc.time() }
-}
-
-# yahoo!mapのapiを使うためのURL
-root <- "http://geo.search.olp.yahooapis.jp/OpenLocalPlatform/V1/geoCoder?"
-root <- paste0(root,"appid=",conf$api_key ,"&output=json")
-
 
 for (i in 1:nrow(published_land_price_df)) {
-  address_str <- published_land_price_df$address[i]
-  url   <- paste0(root, "&query=", address_str, sep="")
-  url.u <- URLencode(iconv(url, "", "UTF-8")) # UTF-8に変換
-  doc <- getURL(url.u)
-  x <- fromJSON(doc, simplify = FALSE)
-  
-  tryCatch({
-    # エラーや警告が発生したときに例外処理を行いたいコード
-    published_land_price_df$latitude[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[2]
-    published_land_price_df$longitude[i] <- unlist(strsplit(x$Feature[[1]]$Geometry$Coordinates, ","))[1]
-    published_land_price_df$location_type[i] <- x$Feature[[1]]$Property$AddressType
-    published_land_price_df$formatted_address[i] <- x$Feature[[1]]$Property$Address
-    print(i)
-  }, 
-  error = function(e) {
-    #エラーが発生した時の処理
-    print("error")
-  },
-  warning = function(e) {
-    #警告が発生した時の処理
-  },
-  finnaly = {
-    #ここに記載したコードは必ず実行される
-    
-  }, silent = TRUE)
-  
-  sleep(sleep_time)
-}
+  published_land_price_df$latitude[i] <- as.character(published_land_price$`L01-15`$geometry[[i]][2])
+  published_land_price_df$longitude[i] <- as.character(published_land_price$`L01-15`$geometry[[i]][1])
 }
 
+# published_land_price_df <- published_land_price_df %>% filter( 15000 > area_code ,area_code > 11000)
 
-published_land_price_df <- published_land_price_df %>% filter(latitude!="")
-
-published_land_price_df <- published_land_price_df %>% mutate(mesh="")
 
 # 緯度経度を10kmメッシュにする
 for (i in 1:nrow(published_land_price_df)) {
@@ -117,6 +54,7 @@ for (i in 1:nrow(published_land_price_df)) {
     as.numeric(published_land_price_df$latitude[i]),
     mesh_size = "10km")
 }
+
 published_land_price_df <- published_land_price_df %>% mutate(mesh=as.integer(mesh))
 
 published_land_price_df_summary <- published_land_price_df %>% group_by(mesh) %>% summarise(mean_price=mean(price))
@@ -151,6 +89,7 @@ for (i in 1:nrow(estimated_population_df)) {
     mesh_size = "10km")
 }
 
+
 estimated_population_df <- estimated_population_df %>% 
                               mutate(five_k_mesh=as.integer(five_k_mesh))
 
@@ -166,9 +105,38 @@ estimated_population_df_distinct$accident_count <- replace_na(estimated_populati
 
 estimated_population_df_distinct <- estimated_population_df_distinct %>% mutate(accident_percapita=accident_count/population)
 
-
 estimated_population_df_distinct <- estimated_population_df_distinct %>% 
                                         left_join(published_land_price_df_summary,
                                                   by=c("five_k_mesh"="mesh"))
+
+# save(estimated_population_df_distinct, file = "estimated_population_df_distinct.RData")
+
+
+
+df <- estimated_population_df_distinct %>% group_by(city_code) %>% summarise(accident_count=sum(accident_count),
+                                                                             population=sum(population))
+
+
+library(jpndistrict)
+
+sf_pref13 <- jpn_pref(pref_code = 13, district = TRUE) %>% mutate(city_code=as.integer(city_code))
+  # st_simplify(dTolerance = 0.01) %>% mutate(city_code = as.numeric(city_code)) %>%
+  # filter(city_code >= 13000, city_code < 13300) %>% st_union() %>%
+  # as.data.frame() %>% mutate(jis_code = "13",
+  #                            prefecture = "東京都") %>% magrittr::set_names(c("geometry",
+  #                                                                          "jis_code", "prefecture")) %>% st_as_sf()
+
+a <- sf_pref13 %>% left_join(df, by = "city_code") %>% filter(city_code >= 13000, city_code < 13300)
+a$accident_count <- replace_na(data = a$accident_count,0)
+a$population <- replace_na(data = a$population,100)
+
+a <- a %>% mutate(percapita_accident=accident_count/population)
+
+ggplot(a) +
+  geom_sf(data = a, aes(fill=percapita_accident))
+
+
+ggplot(a) +
+  geom_sf(data = a, aes(fill=accident_count))
 
 
