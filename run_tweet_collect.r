@@ -6,7 +6,7 @@ library(twitteR)
 library(config)
 library(bit64)
 
-n <- 100
+n <- 1000
 user_name <- "Oshimaland"
 
 # sleep関数の指定
@@ -37,11 +37,11 @@ pb <- txtProgressBar(min = 1, max = n, style = 3)
 # さかのぼってtweetを取得する。
 for (j in 1:n) {
   if (j == 1){
-    ut <- userTimeline(user=user_name, n = 100)
+    ut <- userTimeline(user=user_name)
   }
   else {
     ut <- userTimeline(user=user_name,
-                       maxID = df$id[ut_length], n = 100)
+                       maxID = df$id[ut_length])
   }
   ut_length <- length(ut)
   empty_vec <- rep(NA, ut_length)
@@ -65,4 +65,4 @@ for (j in 1:n) {
 }
 
 # 保存
-save(ut_df, file = "ut_df.RData")
+# save(ut_df, file = "ut_df.RData")

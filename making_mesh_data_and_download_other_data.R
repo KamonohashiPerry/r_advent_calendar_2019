@@ -111,7 +111,11 @@ estimated_population_df_distinct <- estimated_population_df_distinct %>%
 
 # save(estimated_population_df_distinct, file = "estimated_population_df_distinct.RData")
 
+load(file = "estimated_population_df_distinct.RData")
 
+estimated_population_df_distinct <- estimated_population_df_distinct %>% mutate(accident_ratio_class=if_else(estimated_population_df_distinct$accident_percapita > 0.05, "0.05以上",
+                                                                                                             if_else(estimated_population_df_distinct$accident_percapita > 0.01, "0.01以上",
+                                                                                                                     "0.01未満")))
 
 df <- estimated_population_df_distinct %>% group_by(city_code) %>% summarise(accident_count=sum(accident_count),
                                                                              population=sum(population))
@@ -139,4 +143,23 @@ ggplot(a) +
 ggplot(a) +
   geom_sf(data = a, aes(fill=accident_count))
 
+
+estimated_population_df_distinct <- estimated_population_df_distinct %>% mutate(lng_center=as.numeric(lng_center),
+                                                                                lat_center=as.numeric(lat_center))
+
+# 
+estimated_population_df_distinct_sf <- st_as_sf(estimated_population_df_distinct,
+                                                coords = c("lng_center", "lat_center"))
+
+library(dplyr)
+library(jpndistrict)
+library(mapview)
+
+m <- 
+  estimated_population_df_distinct_sf %>% 
+  dplyr::filter(city_code >= 13000, city_code < 13300) %>% 
+  mapview(zcol = "accident_ratio_class") + 
+  mapview(a)
+
+m
 
