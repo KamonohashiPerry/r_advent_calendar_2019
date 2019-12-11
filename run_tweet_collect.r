@@ -27,7 +27,7 @@ setup_twitter_oauth(consumer_key = conf$api_key,
 
 # twitterから取得する情報のdata.frame
 ut_df <- data.frame(created_at=NA,
-                    id=NA,
+                    id=bit64::as.integer64(NA),
                     url=NA)
 
 # プログレスバー
@@ -41,7 +41,7 @@ for (j in 1:n) {
   }
   else {
     ut <- userTimeline(user=user_name,
-                       maxID = df$id[ut_length])
+                       maxID = min(ut_df$id[2:nrow(ut_df)]))
   }
   ut_length <- length(ut)
   empty_vec <- rep(NA, ut_length)
@@ -62,6 +62,8 @@ for (j in 1:n) {
   
   setTxtProgressBar(pb, j) 
   sleep(30)
+  
+  save(ut_df, file = "ut_df_201912.RData")
 }
 
 # 保存
