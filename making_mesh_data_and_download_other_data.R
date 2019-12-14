@@ -44,6 +44,18 @@ for (i in 1:nrow(published_land_price_df)) {
   published_land_price_df$longitude[i] <- as.character(published_land_price$`L01-15`$geometry[[i]][1])
 }
 
+
+published_land_price_df_tokyo <- published_land_price_df %>% filter(stringr::str_detect(address,"東京"),
+                                                                    stringr::str_detect(address,"区"))
+published_land_price_df_tokyo$address_fixed <- gsub(pattern = "　", replacement = "", published_land_price_df_tokyo$address)
+published_land_price_df_tokyo$address_fixed <- stringi::stri_trans_nfkc(published_land_price_df_tokyo$address_fixed)
+
+for (i in 1:nrow(published_land_price_df_tokyo)) {
+  published_land_price_df_tokyo$address_fixed[i] <- strsplit(published_land_price_df_tokyo$address_fixed,split="[0-9]")[[i]][1]
+}
+
+tokyo_city_list <- unique(published_land_price_df_tokyo$address_fixed)
+
 # published_land_price_df <- published_land_price_df %>% filter( 15000 > area_code ,area_code > 11000)
 
 
