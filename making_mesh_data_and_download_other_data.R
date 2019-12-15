@@ -5,7 +5,8 @@ library(tidyverse)
 library(kokudosuuchi)
 
 # load dataset
-load(file = "accident_df_with_coordinate.RData")
+# load(file = "accident_df_with_coordinate.RData")
+load(file = "accident_df_with_coordinate__from_map.RData")
 
 # メッシュデータの追加
 accident_df <- accident_df %>% mutate(k_mesh="")
@@ -16,7 +17,7 @@ for (i in 1:nrow(accident_df)) {
   accident_df$k_mesh[i] <- jpmesh::coords_to_mesh(
                                         as.numeric(accident_df$longitude[i]),
                                         as.numeric(accident_df$latitude[i]),
-                                        mesh_size = "10km")
+                                        mesh_size = "1km")
 }
 
 # メッシュを整数にする
@@ -56,15 +57,17 @@ for (i in 1:nrow(published_land_price_df_tokyo)) {
 
 tokyo_city_list <- unique(published_land_price_df_tokyo$address_fixed)
 
+save(tokyo_city_list, file = "tokyo_city_list.RData")
+
 # published_land_price_df <- published_land_price_df %>% filter( 15000 > area_code ,area_code > 11000)
 
 
-# 緯度経度を10kmメッシュにする
+# 緯度経度を1kmメッシュにする
 for (i in 1:nrow(published_land_price_df)) {
   published_land_price_df$mesh[i] <- jpmesh::coords_to_mesh(
     as.numeric(published_land_price_df$longitude[i]),
     as.numeric(published_land_price_df$latitude[i]),
-    mesh_size = "10km")
+    mesh_size = "1km")
 }
 
 published_land_price_df <- published_land_price_df %>% mutate(mesh=as.integer(mesh))
@@ -81,72 +84,79 @@ estimated_population_df <- data.frame(one_k_mesh=estimated_population$Mesh3_POP_
                                        population=estimated_population$Mesh3_POP_00$POP2010)
 
 
-estimated_population_df <- estimated_population_df %>% mutate(lng_center="",
-                                                              lat_center="")
+# estimated_population_df <- estimated_population_df %>% mutate(lng_center="",
+#                                                               lat_center="")
+# 
+# # 1kmメッシュを緯度経度に戻す
+# for (i in 1:nrow(estimated_population_df)) {
+#   estimated_population_df$lng_center[i] <- jpmesh::mesh_to_coords(estimated_population_df$one_k_mesh[i])$lng_center
+#   estimated_population_df$lat_center[i] <- jpmesh::mesh_to_coords(estimated_population_df$one_k_mesh[i])$lat_center
+# }
+# 
+# 
+# estimated_population_df <- estimated_population_df %>% mutate(five_k_mesh="")
 
-# 1kmメッシュを緯度経度に戻す
-for (i in 1:nrow(estimated_population_df)) {
-  estimated_population_df$lng_center[i] <- jpmesh::mesh_to_coords(estimated_population_df$one_k_mesh[i])$lng_center
-  estimated_population_df$lat_center[i] <- jpmesh::mesh_to_coords(estimated_population_df$one_k_mesh[i])$lat_center
-}
+# # 緯度経度を10kmメッシュにする
+# for (i in 1:nrow(estimated_population_df)) {
+#   estimated_population_df$five_k_mesh[i] <- jpmesh::coords_to_mesh(
+#     as.numeric(estimated_population_df$lng_center[i]),
+#     as.numeric(estimated_population_df$lat_center[i]),
+#     mesh_size = "10km")
+# }
 
 
-estimated_population_df <- estimated_population_df %>% mutate(five_k_mesh="")
-
-# 緯度経度を10kmメッシュにする
-for (i in 1:nrow(estimated_population_df)) {
-  estimated_population_df$five_k_mesh[i] <- jpmesh::coords_to_mesh(
-    as.numeric(estimated_population_df$lng_center[i]),
-    as.numeric(estimated_population_df$lat_center[i]),
-    mesh_size = "10km")
-}
-
-
+# estimated_population_df <- estimated_population_df %>% 
+#                               mutate(five_k_mesh=as.integer(five_k_mesh))
 estimated_population_df <- estimated_population_df %>% 
-                              mutate(five_k_mesh=as.integer(five_k_mesh))
+                                mutate(one_k_mesh=as.integer(one_k_mesh))
 
-estimated_population_df_distinct <- estimated_population_df %>% distinct(five_k_mesh,.keep_all=TRUE)
+# estimated_population_df_distinct <- estimated_population_df %>% distinct(five_k_mesh,.keep_all=TRUE)
 
 
 accident_summary <- accident_df %>% group_by(k_mesh) %>% summarise(accident_count=n()) %>% arrange(desc(accident_count))
 
-estimated_population_df_distinct <- estimated_population_df_distinct %>% 
+# estimated_population_df_distinct <- estimated_population_df_distinct %>% 
+#                                         left_join(accident_summary,
+#                                                   by = c("five_k_mesh"="k_mesh"))
+estimated_population_df <- estimated_population_df %>% 
                                         left_join(accident_summary,
-                                                  by = c("five_k_mesh"="k_mesh"))
-estimated_population_df_distinct$accident_count <- replace_na(estimated_population_df_distinct$accident_count, 0)
+                                                  by = c("one_k_mesh"="k_mesh"))
 
-estimated_population_df_distinct <- estimated_population_df_distinct %>% mutate(accident_percapita=accident_count/population)
+estimated_population_df$accident_count <- replace_na(estimated_population_df$accident_count, 0)
 
-estimated_population_df_distinct <- estimated_population_df_distinct %>% 
-                                        left_join(published_land_price_df_summary,
-                                                  by=c("five_k_mesh"="mesh"))
+estimated_population_df <- estimated_population_df %>% mutate(accident_percapita=accident_count/population)
 
-# save(estimated_population_df_distinct, file = "estimated_population_df_distinct.RData")
+estimated_population_df <- estimated_population_df %>% 
+                              left_join(published_land_price_df_summary,
+                                        by=c("one_k_mesh"="mesh"))
 
-load(file = "estimated_population_df_distinct.RData")
+# save(estimated_population_df, file = "estimated_population_df_from_map.RData")
 
-estimated_population_df_distinct <- estimated_population_df_distinct %>% mutate(accident_ratio_class=if_else(estimated_population_df_distinct$accident_percapita > 0.05, "0.05以上",
-                                                                                                             if_else(estimated_population_df_distinct$accident_percapita > 0.01, "0.01以上",
-                                                                                                                     "0.01未満")))
+load(file = "estimated_population_df_from_map.RData")
 
-df <- estimated_population_df_distinct %>% group_by(city_code) %>% summarise(accident_count=sum(accident_count),
+estimated_population_df <- estimated_population_df %>% 
+                                mutate(accident_ratio_class=if_else(estimated_population_df$accident_percapita > 0.05, "0.05以上",
+                                                                    if_else(estimated_population_df$accident_percapita > 0.01, "0.01以上","0.01未満")))
+estimated_population_df <- estimated_population_df %>% mutate(accident_percapita_100 = round(estimated_population_df$accident_percapita*100,2)  )
+
+
+df <- estimated_population_df %>% group_by(city_code) %>% summarise(accident_count=sum(accident_count),
                                                                              population=sum(population))
 
 
 library(jpndistrict)
 
-sf_pref13 <- jpn_pref(pref_code = 13, district = TRUE) %>% mutate(city_code=as.integer(city_code))
-  # st_simplify(dTolerance = 0.01) %>% mutate(city_code = as.numeric(city_code)) %>%
-  # filter(city_code >= 13000, city_code < 13300) %>% st_union() %>%
-  # as.data.frame() %>% mutate(jis_code = "13",
-  #                            prefecture = "東京都") %>% magrittr::set_names(c("geometry",
-  #                                                                          "jis_code", "prefecture")) %>% st_as_sf()
+sf_pref13 <- jpn_pref(pref_code = 13, district = TRUE) %>% 
+                mutate(city_code=as.integer(city_code))
 
-a <- sf_pref13 %>% left_join(df, by = "city_code") %>% filter(city_code >= 13000, city_code < 13300)
+a <- sf_pref13 %>% 
+      left_join(df, by = "city_code") %>% 
+      filter(city_code >= 13000, city_code < 13300)
+
 a$accident_count <- replace_na(data = a$accident_count,0)
 a$population <- replace_na(data = a$population,100)
 
-a <- a %>% mutate(percapita_accident=accident_count/population)
+a <- a %>% mutate(percapita_accident=round(accident_count/population*100,2))
 
 ggplot(a) +
   geom_sf(data = a, aes(fill=percapita_accident))
@@ -156,8 +166,8 @@ ggplot(a) +
   geom_sf(data = a, aes(fill=accident_count))
 
 
-estimated_population_df_distinct <- estimated_population_df_distinct %>% mutate(lng_center=as.numeric(lng_center),
-                                                                                lat_center=as.numeric(lat_center))
+# estimated_population_df <- estimated_population_df %>% mutate(lng_center=as.numeric(lng_center),
+#                                                               lat_center=as.numeric(lat_center))
 
 # 
 estimated_population_df_distinct_sf <- st_as_sf(estimated_population_df_distinct,
@@ -174,4 +184,21 @@ m <-
   mapview(a)
 
 m
+
+
+mesh_df <- administration_mesh(code = 13, type = "prefecture") %>% 
+                head() %>% 
+                knitr::kable(format = "markdown")
+
+estimated_population_df_tokyo <- estimated_population_df %>% filter(city_code>=13000, city_code<13300)
+estimated_population_df_tokyo <- estimated_population_df_tokyo %>% mutate(poligon="")
+
+for (i in 1:nrow(estimated_population_df_tokyo)) {
+  estimated_population_df_tokyo$poligon[i] <- export_mesh(estimated_population_df_tokyo$one_k_mesh[i])
+}
+# sfオブジェクトに変換
+estimated_population_df_tokyo <- sf::st_as_sf(estimated_population_df_tokyo)
+
+# マップでの可視化
+estimated_population_df_tokyo %>% mapview::mapview(zcol = "accident_percapita_100")
 

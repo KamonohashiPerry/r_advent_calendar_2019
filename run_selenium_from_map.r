@@ -2,7 +2,7 @@ library(RSelenium)
 library(tidyverse)
 
 # 待機時間
-sleep_time <- 5
+sleep_time <- 2
 
 # sleep関数の指定
 sleep <- function(sec){
@@ -19,19 +19,17 @@ rem$open()
 
 url <- "http://www.oshimaland.co.jp"
 
-accident_df <- data.frame(url=NA,
-                          date=NA,
-                          address=NA,
-                          detail=NA,
-                          upload_date=NA)
+# accident_df <- data.frame(url=NA,
+#                           date=NA,
+#                           address=NA,
+#                           detail=NA,
+#                           upload_date=NA)
 
 
-i <- 1
-
-#ブラウザで目的のページに移動
-rem$navigate(url)
-
-for (i in 1:length(tokyo_city_list)) {
+for (i in 67:length(tokyo_city_list)) {
+  #ブラウザで目的のページに移動
+  rem$navigate(url)
+  
   for (k in 1:5) {
     tryCatch({
       # 検索窓にキーワードを入力する
@@ -83,11 +81,17 @@ for (i in 1:length(tokyo_city_list)) {
                            upload_date=as.character(element_4$getElementText())
           )
           accident_df <- rbind(accident_df, df)
+          save(accident_df, file = "accident_df_from_map.RData")
           print(as.character(element_3$getElementText()))
+          print(length(unique(accident_df$address)))
         }, 
         error = function(e) {print("error")},
         warning = function(e) {},
-        finnaly = {print(j)}, silent = TRUE)
+        finnaly = {print(j)
+          rem$executeScript("window.scrollTo(0,150);")
+          sleep(sleep_time)
+          sleep(sleep_time)
+          }, silent = TRUE)
       } 
     }, 
     error = function(e) {print("error")},

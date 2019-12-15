@@ -1,11 +1,13 @@
 library(config)
 library(RCurl)
 library(RJSONIO)
+library(tidyverse)
 
 # ローカルのconfigファイルからオブジェクトの取得
 conf <- config::get(config = "yahoo_map_api")
 
-load(file = "accident_df.RData")
+# load(file = "accident_df.RData")
+load(file = "accident_df_from_map.RData")
 
 # 待機時間
 sleep_time <- 1
@@ -20,7 +22,7 @@ sleep <- function(sec){
 
 
 # 重複削除
-accident_df <- accident_df %>% distinct(url,.keep_all=TRUE)
+# accident_df <- accident_df %>% distinct(url,.keep_all=TRUE)
 accident_df <- accident_df %>% distinct(address,.keep_all=TRUE)
 
 # 経度と緯度のカラム追加
@@ -65,4 +67,5 @@ for (i in 2:nrow(accident_df)) {
   sleep(sleep_time)
 }
 
-save(accident_df, file = "accident_df_with_coordinate.RData")
+# save(accident_df, file = "accident_df_with_coordinate.RData")
+save(accident_df, file = "accident_df_with_coordinate__from_map.RData")
