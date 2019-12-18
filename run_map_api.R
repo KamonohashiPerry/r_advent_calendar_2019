@@ -68,4 +68,4 @@ for (i in 2:nrow(accident_df)) {
 }
 
 # save(accident_df, file = "accident_df_with_coordinate.RData")
-save(accident_df, file = "accident_df_with_coordinate__from_map.RData")
+save(accident_df, file = "accident_df_with_coordinate_from_map.RData")

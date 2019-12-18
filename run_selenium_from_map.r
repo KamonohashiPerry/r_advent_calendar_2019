@@ -26,7 +26,7 @@ url <- "http://www.oshimaland.co.jp"
 #                           upload_date=NA)
 
 
-for (i in 67:length(tokyo_city_list)) {
+for (i in 179:length(tokyo_city_list)) {
   #ブラウザで目的のページに移動
   rem$navigate(url)
   
@@ -56,19 +56,20 @@ for (i in 67:length(tokyo_city_list)) {
       element_zoom$clickElement()
       
       # 事故物件の星マークを取得する
-      element_fires <- rem$findElements(using = "class", 'fire-image')
-      sleep(sleep_time)
-      print("fire")
-      
+      # element_fires <- rem$findElements(using = "class", 'fire-image')
+      # sleep(sleep_time)
+      # print("fire")
+      # 
       # rem$executeScript("window.scrollTo(0,100);")
       
-      for (j in 1:length(element_fires)) {
+      for (j in 1:50) {
         tryCatch({
           # エラーや警告が発生したときに例外処理を行いたいコード
+          element_fires <- rem$findElements(using = "class", 'fire-image')
           element_fires_each <- element_fires[[j]]
           element_fires_each$clickElement()
           print("fire click")
-          sleep(sleep_time)
+
           # 要素の取得
           element_1 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[1]')
           element_2 <- rem$findElement(using = "xpath", '//*[@id="property-info"]/li[2]')
@@ -89,8 +90,6 @@ for (i in 67:length(tokyo_city_list)) {
         warning = function(e) {},
         finnaly = {print(j)
           rem$executeScript("window.scrollTo(0,150);")
-          sleep(sleep_time)
-          sleep(sleep_time)
           }, silent = TRUE)
       } 
     }, 
