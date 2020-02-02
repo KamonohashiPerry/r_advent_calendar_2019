@@ -29,6 +29,8 @@ accident_df <- accident_df %>% mutate(k_mesh=as.integer(k_mesh))
 accident_df <- accident_df %>% filter(stringr::str_detect(formatted_address,"東京"))
 accident_df %>% group_by(k_mesh) %>% count() %>% arrange(desc(n))
 
+# accident_df <- rbind(accident_df,accident_df_1)
+
 
 # 国土地理院のデータを取得する
 KSJlist <- getKSJSummary()
@@ -142,41 +144,41 @@ load(file = "estimated_population_df_from_map_2.RData")
 estimated_population_df <- estimated_population_df %>% 
                                 mutate(accident_ratio_class=if_else(estimated_population_df$accident_percapita > 0.05, "0.05以上",
                                                                     if_else(estimated_population_df$accident_percapita > 0.01, "0.01以上","0.01未満")))
-estimated_population_df <- estimated_population_df %>% mutate(accident_percapita_100 = round(estimated_population_df$accident_percapita*100,2)  )
+estimated_population_df <- estimated_population_df %>% mutate(accident_ratio = round(estimated_population_df$accident_percapita*100,2)  )
 
 
-df <- estimated_population_df %>% group_by(city_code) %>% summarise(accident_count=sum(accident_count),
-                                                                             population=sum(population))
+# df <- estimated_population_df %>% group_by(city_code) %>% summarise(accident_count=sum(accident_count),
+#                                                                              population=sum(population))
 
 
 library(jpndistrict)
 
-sf_pref13 <- jpn_pref(pref_code = 13, district = TRUE) %>% 
-                mutate(city_code=as.integer(city_code))
-
-a <- sf_pref13 %>% 
-      left_join(df, by = "city_code") %>% 
-      filter(city_code >= 13000, city_code < 13300)
-
-a$accident_count <- replace_na(data = a$accident_count,0)
-a$population <- replace_na(data = a$population,100)
-
-a <- a %>% mutate(percapita_accident=round(accident_count/population*100,2))
-
-ggplot(a) +
-  geom_sf(data = a, aes(fill=percapita_accident))
-
-
-ggplot(a) +
-  geom_sf(data = a, aes(fill=accident_count))
+# sf_pref13 <- jpn_pref(pref_code = 13, district = TRUE) %>% 
+#                 mutate(city_code=as.integer(city_code))
+# 
+# a <- sf_pref13 %>% 
+#       left_join(df, by = "city_code") %>% 
+#       filter(city_code >= 13000, city_code < 13300)
+# 
+# a$accident_count <- replace_na(data = a$accident_count,0)
+# a$population <- replace_na(data = a$population,100)
+# 
+# a <- a %>% mutate(percapita_accident=round(accident_count/population*100,2))
+# 
+# ggplot(a) +
+#   geom_sf(data = a, aes(fill=percapita_accident))
+# 
+# 
+# ggplot(a) +
+#   geom_sf(data = a, aes(fill=accident_count))
 
 
 # estimated_population_df <- estimated_population_df %>% mutate(lng_center=as.numeric(lng_center),
 #                                                               lat_center=as.numeric(lat_center))
 
 # 
-estimated_population_df_distinct_sf <- st_as_sf(estimated_population_df_distinct,
-                                                coords = c("lng_center", "lat_center"))
+# estimated_population_df_distinct_sf <- st_as_sf(estimated_population_df_distinct,
+#                                                 coords = c("lng_center", "lat_center"))
 
 
 library(dplyr)
@@ -200,7 +202,7 @@ estimated_population_df_tokyo <- estimated_population_df_tokyo %>% left_join(cit
 estimated_population_df_tokyo <- estimated_population_df_tokyo %>% filter(accident_percapita_100 < 1)
 
 # マップでの可視化
-estimated_population_df_tokyo %>% mapview::mapview(zcol = "accident_percapita_100", aplha = 0,at = seq(0.0001, 1, 0.09))
+estimated_population_df_tokyo %>% mapview::mapview(zcol = "accident_ratio", aplha = 0,at = seq(0.0001, 1, 0.09))
 
 # マップでの可視化
 estimated_population_df_tokyo %>% mapview::mapview(zcol = "accident_count", aplha = 0,at = seq(1, 50, 5))
@@ -231,4 +233,23 @@ g <- g + ggtitle("1kmメッシュごとのAP件数のヒストグラム")
 g
 
 
+g <- ggplot(data = estimated_population_df_tokyo %>% filter(population > 0),
+            aes(population)) + theme_set(theme_bw(base_size = 14,base_family="HiraKakuProN-W3"))
+g <- g +geom_histogram(bins = 50)
+g <- g + ggtitle("1kmメッシュごとの人口のヒストグラム")
+g
+
+
+g <- ggplot(data = estimated_population_df_tokyo %>% filter(mean_price > 0),
+            aes(mean_price)) + theme_set(theme_bw(base_size = 14,base_family="HiraKakuProN-W3"))
+g <- g +geom_histogram(bins = 50)
+g <- g + ggtitle("1kmメッシュごとの平均公示地価のヒストグラム")
+g
+
+
+g <- ggplot(data = estimated_population_df_tokyo %>% filter(accident_ratio > 0),
+            aes(accident_ratio)) + theme_set(theme_bw(base_size = 14,base_family="HiraKakuProN-W3"))
+g <- g +geom_histogram(bins = 50)
+g <- g + ggtitle("1kmメッシュごとの人口あたり事故物件発生件数のヒストグラム")
+g
 

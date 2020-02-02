@@ -31,6 +31,8 @@ accident_df <- accident_df %>% mutate(latitude="",
                                       location_type="",
                                       formatted_address="")
 
+accident_df <- accident_df %>% filter(!(address %in% accident_df_1$address ))
+
 
 # yahoo!mapのapiを使うためのURL
 root <- "http://geo.search.olp.yahooapis.jp/OpenLocalPlatform/V1/geoCoder?"

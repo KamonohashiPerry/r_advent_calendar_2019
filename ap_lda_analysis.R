@@ -4,8 +4,13 @@ library(topicmodels)
 
 load(file = "accident_df_with_coordinate_from_map.RData")
 
+
+accident_df$detail_fixed <- gsub(x = accident_df$detail,
+                                 pattern = "\\(|\\)|（|）|/|\\.|:|_|-|[0-9]|[０-９]",
+                                 replacement = " ")
+
 # Bag of wordsの生成
-res <- docMatrixDF(accident_df$detail,minFreq=4)
+res <- docMatrixDF(accident_df$detail_fixed,minFreq=4)
 colnames(res) <- accident_df$k_mesh
 res <- t(res)
 res <- res[rowSums(res) >=1, ]
@@ -52,13 +57,13 @@ load(file = "accident_df_with_coordinate__from_map.RData")
 
 address_bow <- docMatrixDF(accident_df$address,minFreq=1)
 word_list <- data.frame(word=rownames(address_bow), count=rowSums(address_bow))
-word_list %>% filter(count<100, !stringr::str_detect(word, "[0-9]")) %>% wordcloud2()
+word_list %>% filter(count<200, !stringr::str_detect(word, "[0-9]")) %>% wordcloud2()
 
 
 
 accident_bow <- docMatrixDF(accident_df$detail,minFreq=1)
 word_list <- data.frame(word=rownames(accident_bow), count=rowSums(accident_bow))
-word_list %>% filter(count<300, !stringr::str_detect(word, "[0-9]")) %>% wordcloud2()
+word_list %>% filter(count<500, !stringr::str_detect(word, "[0-9]")) %>% wordcloud2()
 
 
 date_bow <- docMatrixDF(accident_df$date,minFreq=1)
