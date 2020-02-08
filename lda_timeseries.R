@@ -81,24 +81,32 @@ res <- res %>% select(`2011`,`2012`,`2013`,`2014`,`2015`,`2016`,`2017`,`2018`,`2
 
 for (i in 1:nrow(res)) {
   nam <- paste("w_", i, sep = "")
-  assign(nam, as.integer(res[1, ]))
+  assign(nam, as.integer(res[i, ]))
 }
 
 # こんな感じで作っていけばいい。
-document_term_table <- data.frame(list(aaa=w_1, bbb=w_2))
+document_term_table <- data.frame(list(hanging=w_1,abandon=w_2,stabbing=w_3,unnatural=w_4,
+                                       loneliness=w_5,beating=w_6,murder=w_7,fire=w_8,
+                                       defect=w_9,smell=w_10,brique=w_11,strangu=w_12,
+                                       shirahone=w_13,franc=w_14,suicide=w_15,fall=w_16,
+                                       incident=w_17,accident=w_18,apartment=w_19,indoor=w_20,
+                                       rooftop=w_21,toilet=w_22,building=w_23,verandah=w_24,
+                                       bathroom=w_25,maison=w_26
+                                       ))
 
 
-document_covariate_table <- list(year=as.integer(colnames(res)),
-                                            year2=as.integer(colnames(res)))
 
-test_set <- list(document_term_table, document_covariate_table)
+document_covariate_table <- data.frame(list(year=as.integer(colnames(res))))
 
-r_LDATS <- LDA_TS(rodents,
-                  topics = 2:5, 
+test_set <- list(document_term_table=document_term_table, document_covariate_table=document_covariate_table)
+
+
+r_LDATS <- LDA_TS(test_set,
+                  topics = 3:5, 
                   nseeds = 2,
                   formulas = ~1,  
-                  nchangepoints = 0:1,
-                  timename = "newmoon")
+                  nchangepoints = 1:2,
+                  timename = "year")
 
 
 print(r_LDATS)
